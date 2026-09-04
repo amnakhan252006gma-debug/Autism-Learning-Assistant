@@ -1,4 +1,5 @@
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from routes.children import router as children_router
 from routes.activities import router as activities_router
 from routes.activity_attempts import router as activity_attempts_router
@@ -23,6 +24,16 @@ app = FastAPI(
     title="Autism Learning Assistant API"
 )
 
+
+# Allow local Flutter web development to call the API.
+# For production, replace "*" with the real frontend origins.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Create database tables
 Base.metadata.create_all(
