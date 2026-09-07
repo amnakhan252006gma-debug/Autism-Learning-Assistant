@@ -3,9 +3,8 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from database import SessionLocal
-from models import Child
+from models import Child, User, ChildAssignment
 from routes.auth import get_current_user
-from models import User
 
 
 router = APIRouter(
@@ -89,20 +88,42 @@ def get_child(
 ):
     child = (
         db.query(Child)
-        .filter(
-            Child.id == child_id,
-            Child.parent_id == current_user.id
-        )
+        .filter(Child.id == child_id)
         .first()
     )
 
     if not child:
         raise HTTPException(
-            status_code=404,
+            status_code=status.HTTP_404_NOT_FOUND,
             detail="Child not found"
         )
 
-    return child
+    # Parent can access their own child
+    if (
+        current_user.role == "parent"
+        and child.parent_id == current_user.id
+    ):
+        return child
+
+    # Teacher/therapist can access only children assigned to them
+    if current_user.role in ["teacher", "therapist"]:
+        assignment = (
+            db.query(ChildAssignment)
+            .filter(
+                ChildAssignment.child_id == child_id,
+                ChildAssignment.user_id == current_user.id,
+                ChildAssignment.role == current_user.role
+            )
+            .first()
+        )
+
+        if assignment:
+            return child
+
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="You are not authorized to access this child"
+    )
 
 
 @router.put("/{child_id}")
@@ -123,7 +144,7 @@ def update_child(
 
     if not child:
         raise HTTPException(
-            status_code=404,
+            status_code=status.HTTP_404_NOT_FOUND,
             detail="Child not found"
         )
 
@@ -162,7 +183,7 @@ def delete_child(
 
     if not child:
         raise HTTPException(
-            status_code=404,
+            status_code=status.HTTP_404_NOT_FOUND,
             detail="Child not found"
         )
 

@@ -6,6 +6,7 @@ from routes.activity_attempts import router as activity_attempts_router
 from routes.activity_results import router as activity_results_router
 from routes.progress import router as progress_router
 from database import Base, engine
+from routes.users import router as users_router
 from routes.child_assignments import router as child_assignments_router
 from models import (
     User,
@@ -51,6 +52,7 @@ app.include_router(activities_router)
 app.include_router(activity_attempts_router)
 app.include_router(activity_results_router)
 app.include_router(progress_router)
+app.include_router(users_router)
 
 @app.get("/")
 def home():
